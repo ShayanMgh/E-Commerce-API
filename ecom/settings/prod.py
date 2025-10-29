@@ -1,0 +1,11 @@
+from .base import *
+
+DEBUG = False
+# Expect ALLOWED_HOSTS from env; example: "api.example.com"
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = 3600
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
