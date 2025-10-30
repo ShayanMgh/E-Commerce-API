@@ -1,3 +1,4 @@
+# ecom/settings/base.py
 """
 Base settings shared by dev/prod.
 - Env-driven configuration via django-environ
@@ -169,3 +170,4 @@ LOGGING = {
 # -----------------------------------------------------------------------------
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default=None)
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default=None)
+PAYMENTS_ALLOW_UNVERIFIED_WEBHOOKS = env.bool("PAYMENTS_ALLOW_UNVERIFIED_WEBHOOKS", default=False)
