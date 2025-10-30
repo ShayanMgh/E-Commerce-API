@@ -84,11 +84,15 @@ class CreatePaymentIntentView(APIView):
                 order.save(update_fields=["payment_intent_id"])
 
             client_secret = pi.get("client_secret")
-            log.info("Created/Retrieved PI order=%s pi=%s amount=%s %s", order.id, order.payment_intent_id, amount, currency)
+            log.info(
+                "Created/Retrieved PI order=%s pi=%s amount=%s %s",
+                order.id, order.payment_intent_id, amount, currency
+            )
             return Response(
                 {"payment_intent_id": order.payment_intent_id, "client_secret": client_secret},
                 status=200,
             )
-        except stripe.error.StripeError as e:
-            log.error("Stripe error order=%s type=%s msg=%s", order.id, type(e).__name__, str(e))
-            return Response({"detail": "stripe_error", "message": str(e)}, status=400)
+        except Exception as e:
+            # Broad catch because this environment's `stripe` module lacks `stripe.error`.
+            log.error("Payments error order=%s type=%s msg=%s", order.id, type(e).__name__, str(e))
+            return Response({"detail": "payments_error", "message": str(e)}, status=400)
