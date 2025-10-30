@@ -66,7 +66,7 @@ class OrderItem(models.Model):
     product_id = models.IntegerField()
     sku = models.CharField(max_length=64)
     title = models.CharField(max_length=255)
-    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
-    qty = models.PositiveIntegerField()
-    line_total = models.DecimalField(max_digits=12, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    qty = models.PositiveIntegerField(default=1)
+    line_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)  # ← add default
     created_at = models.DateTimeField(auto_now_add=True)
