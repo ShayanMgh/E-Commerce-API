@@ -13,5 +13,6 @@ urlpatterns = [
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
     path("api/", include("users.urls")),
     path("api/", include("catalog.urls")),
-    path("api/", include("cart.urls")),   # <-- added
+    path("api/", include("cart.urls")),
+    path("api/", include("orders.urls")),  # <-- added
 ]
