@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from .views import checkout_page  # only the HTML demo view lives here
+from catalog.views_frontend import product_list, product_detail, add_to_cart, view_cart, remove_from_cart
 
 def healthz(_request):
     return JsonResponse({"status": "ok"})
@@ -24,4 +25,10 @@ urlpatterns = [
 
     # Minimal demo checkout page
     path("checkout/", checkout_page, name="checkout"),
+    
+    path("store/", product_list, name="front-products"),
+    path("store/p/<slug:slug>/", product_detail, name="front-product-detail"),    
+    path("cart/", view_cart, name="front-cart"),
+    path("cart/add/<int:product_id>/", add_to_cart, name="front-add-to-cart"),
+    path("cart/remove/<int:item_id>/", remove_from_cart, name="front-remove-from-cart"),
 ]
