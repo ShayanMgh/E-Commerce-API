@@ -1,3 +1,4 @@
+# catalog/admin.py
 from django.contrib import admin
 from .models import Category, Product
 
@@ -7,12 +8,12 @@ class CategoryAdmin(admin.ModelAdmin):
     list_filter = ("is_active",)
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
+    ordering = ("name",)
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("id", "sku", "title", "price", "currency", "stock_qty", "is_active", "category")
+    list_display = ("id", "title", "sku", "price", "currency", "stock_qty", "is_active", "category")
     list_filter = ("is_active", "currency", "category")
-    search_fields = ("sku", "title", "slug", "description")
-    prepopulated_fields = {"slug": ("title",)}
+    search_fields = ("title", "sku", "description")
     autocomplete_fields = ("category",)
-    ordering = ("-created_at",)
+    ordering = ("title",)

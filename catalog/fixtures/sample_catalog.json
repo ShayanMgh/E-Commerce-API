@@ -1,0 +1,17 @@
+[
+    {
+      "model": "catalog.category",
+      "pk": 1,
+      "fields": { "name": "Phones", "slug": "phones", "description": "Smartphones", "is_active": true }
+    },
+    {
+      "model": "catalog.product",
+      "pk": 1,
+      "fields": {
+        "category": 1, "sku": "IPHN13", "title": "iPhone 13", "slug": "iphone-13-iphn13",
+        "description": "128GB, Blue", "price": "799.00", "currency": "USD",
+        "stock_qty": 25, "is_active": true, "image_url": "https://example.com/iphone13.jpg"
+      }
+    }
+  ]
+  
