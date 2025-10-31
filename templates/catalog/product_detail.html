@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ product.title }}{% endblock %}
+{% block content %}
+<h1>{{ product.title }}</h1>
+<p>SKU: {{ product.sku }}</p>
+<p>{{ product.description }}</p>
+<p>Price: {{ product.price }} {{ product.currency }}</p>
+
+<form method="post" action="{% url 'front-add-to-cart' product_id=product.id %}">
+  {% csrf_token %}
+  <label>Qty <input type="number" name="qty" value="1" min="1"></label>
+  <button type="submit">Add to cart</button>
+</form>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Products{% endblock %}
+{% block content %}
+<h1>Products</h1>
+<div class="grid">
+  {% for p in products %}
+    <div class="card">
+      <h3><a href="{% url 'front-product-detail' slug=p.slug %}">{{ p.title }}</a></h3>
+      <p>SKU: {{ p.sku }}</p>
+      <p>Price: {{ p.price }} {{ p.currency }}</p>
+      <form method="post" action="{% url 'front-add-to-cart' product_id=p.id %}">
+        {% csrf_token %}
+        <label>Qty <input type="number" name="qty" value="1" min="1"></label>
+        <button type="submit">Add to cart</button>
+      </form>
+    </div>
+  {% empty %}
+    <p>No products.</p>
+  {% endfor %}
+</div>
+{% endblock %}
