@@ -1,5 +1,6 @@
 from django.db import models, transaction
 from django.utils import timezone
+import uuid
 
 class Order(models.Model):
     STATUS_PENDING = "pending"
@@ -15,6 +16,7 @@ class Order(models.Model):
 
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, related_name="orders")
     public_id = models.UUIDField(unique=True, editable=False)
+    public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     currency = models.CharField(max_length=10, default="USD")
     subtotal_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
