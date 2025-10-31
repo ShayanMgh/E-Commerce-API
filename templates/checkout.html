@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Minimal Checkout</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://js.stripe.com/v3"></script>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:#0b1220; color:#e8eefc; }
+      .card { max-width: 640px; margin: 32px auto; background:#121a2e; padding: 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+      h1,h2 { margin: 0 0 12px; }
+      label { display:block; margin: 12px 0 6px; font-size: 14px; color:#b7c4f0; }
+      input { width:100%; padding:10px 12px; border-radius:10px; border:1px solid #2a3459; background:#0e1430; color:#e8eefc; }
+      button { margin-top: 12px; padding:10px 14px; border:0; border-radius:12px; background:#1a9eff; color:#081226; font-weight: 700; cursor:pointer; }
+      button:disabled { opacity: .6; cursor:not-allowed; }
+      .row { display:flex; gap:12px; }
+      .row > * { flex:1; }
+      pre { white-space: pre-wrap; background:#0e1430; padding:12px; border-radius:10px; color:#b7c4f0; border:1px solid #2a3459; }
+      .ok { color: #4ade80; }
+      .warn { color: #fbbf24; }
+      .err { color: #f87171; }
+      .muted { color:#9db0ff; font-size:12px; }
+      #payment-element { margin-top: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Minimal Checkout</h1>
+      <p class="muted">Log in → Create Order from Cart → Create PaymentIntent → Pay</p>
+
+      <h2>1) Login</h2>
+      <div class="row">
+        <div>
+          <label>Email</label>
+          <input id="email" value="alice@example.com" />
+        </div>
+        <div>
+          <label>Password</label>
+          <input id="password" type="password" value="A-secure-pass1" />
+        </div>
+      </div>
+      <button id="btnLogin">Login</button>
+      <pre id="logAuth" class="muted"></pre>
+
+      <h2>2) Create Order from Cart</h2>
+      <button id="btnCreateOrder">Create Order</button>
+      <pre id="logOrder" class="muted"></pre>
+
+      <h2>3) Create PaymentIntent</h2>
+      <button id="btnIntent">Create PaymentIntent</button>
+      <pre id="logPI" class="muted"></pre>
+
+      <h2>4) Payment Element</h2>
+      <div id="payment-element"></div>
+      <button id="btnPay">Confirm Payment</button>
+      <pre id="logPay" class="muted"></pre>
+    </div>
+
+    <script>
+      // --- Logging with levels (DEBUG/INFO/WARN/ERROR) and toggle via localStorage.LOG_LEVEL ---
+      const LEVELS = { DEBUG: 10, INFO: 20, WARN: 30, ERROR: 40 };
+      const LOG_LEVEL = localStorage.getItem("LOG_LEVEL") || "INFO";
+      function log(el, level, msg, obj) {
+        const lvl = LEVELS[level] || LEVELS.INFO;
+        const gate = LEVELS[LOG_LEVEL] || LEVELS.INFO;
+        if (lvl < gate) return;
+        const time = new Date().toISOString();
+        const text = `[${level}] ${time} ${msg}${obj ? " " + JSON.stringify(obj, null, 2) : ""}`;
+        el.textContent = text;
+        // Mirror to console
+        const fn = level === "ERROR" ? "error" : level === "WARN" ? "warn" : level === "DEBUG" ? "debug" : "log";
+        console[fn](text);
+      }
+      // Sample log lines you might see:
+      // [INFO] 2025-10-30T16:00:00.000Z login.ok user=alice@example.com
+      // [DEBUG] 2025-10-30T16:00:01.000Z create.order response={...}
+      // [ERROR] 2025-10-30T16:00:02.000Z stripe.confirmPayment failed={"error": ...}
+
+      // --- State ---
+      const PUBLISHABLE_KEY = "{{ STRIPE_PUBLISHABLE_KEY }}";
+      const stripe = Stripe(PUBLISHABLE_KEY);
+      let accessToken = null;
+      let currentOrder = null;
+      let clientSecret = null;
+      let elements = null;
+
+      // --- Helpers ---
+      async function api(path, method="GET", body=null, needAuth=true) {
+        const headers = { "Content-Type": "application/json" };
+        if (needAuth && accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+        const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : null });
+        const text = await res.text();
+        let data;
+        try { data = text ? JSON.parse(text) : {}; } catch { data = { raw:text }; }
+        return { status: res.status, ok: res.ok, data };
+      }
+
+      // --- Wiring ---
+      const elAuth = document.getElementById("logAuth");
+      const elOrder = document.getElementById("logOrder");
+      const elPI = document.getElementById("logPI");
+      const elPay = document.getElementById("logPay");
+
+      document.getElementById("btnLogin").onclick = async () => {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        log(elAuth, "INFO", "login.start", { email });
+
+        const r = await api("/api/auth/login", "POST", { email, password }, false);
+        if (r.ok) {
+          accessToken = r.data.access;
+          log(elAuth, "INFO", "login.ok");
+        } else {
+          log(elAuth, "ERROR", "login.fail", r.data);
+        }
+      };
+
+      document.getElementById("btnCreateOrder").onclick = async () => {
+        log(elOrder, "INFO", "order.create.start");
+        const r = await api("/api/checkout/create-order/", "POST", {});
+        if (r.ok) {
+          currentOrder = r.data;
+          log(elOrder, "DEBUG", "order.create.ok", currentOrder);
+        } else {
+          log(elOrder, "ERROR", "order.create.fail", r.data);
+        }
+      };
+
+      document.getElementById("btnIntent").onclick = async () => {
+        if (!currentOrder?.id) return log(elPI, "WARN", "order.missing");
+        log(elPI, "INFO", "pi.create.start", { order_id: currentOrder.id });
+
+        const r = await api("/api/payments/create-intent/", "POST", { order_id: currentOrder.id });
+        if (r.ok) {
+          clientSecret = r.data.client_secret;
+          log(elPI, "DEBUG", "pi.create.ok", r.data);
+          // Mount Payment Element
+          const appearance = { theme: "stripe" };
+          elements = stripe.elements({ appearance, clientSecret });
+          const paymentElement = elements.create("payment");
+          paymentElement.mount("#payment-element");
+        } else {
+          log(elPI, "ERROR", "pi.create.fail", r.data);
+        }
+      };
+
+      document.getElementById("btnPay").onclick = async () => {
+        if (!elements || !clientSecret) return log(elPay, "WARN", "payment.elements.not_ready");
+
+        log(elPay, "INFO", "stripe.confirmPayment.start");
+        const { error } = await stripe.confirmPayment({
+          elements,
+          // Optionally set a return_url; staying on-page for test simplicity:
+          redirect: "if_required",
+        });
+
+        if (error) {
+          log(elPay, "ERROR", "stripe.confirmPayment.fail", { message: error.message, type: error.type });
+        } else {
+          log(elPay, "INFO", "stripe.confirmPayment.ok");
+          // Webhook will finalize order status and decrement stock
+        }
+      };
+    </script>
+  </body>
+</html>

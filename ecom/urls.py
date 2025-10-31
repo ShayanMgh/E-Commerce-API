@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-
+from .views import checkout_page
 def healthz(_request):
     return JsonResponse({"status": "ok"})
 
@@ -16,4 +16,6 @@ urlpatterns = [
     path("api/", include("cart.urls")),
     path("api/", include("orders.urls")),
     path("api/", include("payments.urls")),  # <-- added
+    
+    path("checkout/", checkout_page, name="checkout"),
 ]

@@ -64,7 +64,7 @@ ROOT_URLCONF = "ecom.urls"
 
 TEMPLATES = [{
     "BACKEND": "django.template.backends.django.DjangoTemplates",
-    "DIRS": [],
+    "DIRS": [BASE_DIR / "templates"],   # <-- enable project-level templates/
     "APP_DIRS": True,
     "OPTIONS": {"context_processors": [
         "django.template.context_processors.debug",
@@ -171,3 +171,5 @@ LOGGING = {
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default=None)
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default=None)
 PAYMENTS_ALLOW_UNVERIFIED_WEBHOOKS = env.bool("PAYMENTS_ALLOW_UNVERIFIED_WEBHOOKS", default=False)
+
+STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY", default="pk_test_xxx")
