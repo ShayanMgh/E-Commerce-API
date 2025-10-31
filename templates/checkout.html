@@ -54,6 +54,12 @@
       <div id="payment-element"></div>
       <button id="btnPay">Confirm Payment</button>
       <pre id="logPay" class="muted"></pre>
+
+      <h2>Success</h2>
+      <div id="successBox" style="display:none">
+        <p class="ok">Payment confirmed ✅ Waiting for server to finalize the order…</p>
+        <pre id="logSuccess" class="muted"></pre>
+      </div>
     </div>
 
     <script>
@@ -83,6 +89,7 @@
       let currentOrder = null;
       let clientSecret = null;
       let elements = null;
+      let lastOrderId = null;
 
       // --- Helpers ---
       async function api(path, method="GET", body=null, needAuth=true) {
@@ -120,6 +127,7 @@
         const r = await api("/api/checkout/create-order/", "POST", {});
         if (r.ok) {
           currentOrder = r.data;
+          lastOrderId = currentOrder.id;
           log(elOrder, "DEBUG", "order.create.ok", currentOrder);
         } else {
           log(elOrder, "ERROR", "order.create.fail", r.data);
@@ -159,8 +167,33 @@
         } else {
           log(elPay, "INFO", "stripe.confirmPayment.ok");
           // Webhook will finalize order status and decrement stock
+          document.getElementById("successBox").style.display = "block";
+          pollOrderPaid();
         }
       };
+      async function pollOrderPaid() {
+        const el = document.getElementById("logSuccess");
+        if (!lastOrderId) return log(el, "WARN", "no.order.id");
+        const started = Date.now();
+        const timeoutMs = 30000; // 30s
+        const everyMs = 1200;
+        log(el, "INFO", "poll.start", { order_id: lastOrderId });
+        while (Date.now() - started < timeoutMs) {
+          const r = await api("/api/orders/", "GET");
+          if (!r.ok) {
+            log(el, "WARN", "poll.fetch.fail", r.data);
+          } else {
+                const mine = (r.data || []).find(o => o.id === lastOrderId);
+                if (mine && mine.status === "paid") {
+                  log(el, "INFO", "order.paid", { total: mine.total_amount, public_id: mine.public_id });
+                  return;
+                }
+                log(el, "DEBUG", "order.not_paid_yet");
+            }
+            await new Promise(res => setTimeout(res, everyMs));
+            }
+            log(el, "WARN", "poll.timeout");
+      }
     </script>
   </body>
 </html>
