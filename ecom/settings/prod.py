@@ -57,12 +57,11 @@ REDIS_DB_CACHE = env.int("REDIS_DB_CACHE", default=1)
 REDIS_DB_RATELIMIT = env.int("REDIS_DB_RATELIMIT", default=2)
 
 CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB_CACHE}",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            # You can enable compression and other options here
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',  # Use RedisCache backend
+        'LOCATION': 'redis://127.0.0.1:6379/1',  # Redis server (change for your environment)
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },
     }
 }
