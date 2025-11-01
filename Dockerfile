@@ -45,10 +45,13 @@ RUN mkdir -p /vol/static /vol/media
 # Expose port (Gunicorn will bind to 8000)
 EXPOSE 8000
 
-# Use an unprivileged user (optional but recommended)
+# copy entrypoint and give execute permission
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# run as non-root for safety
 RUN groupadd -r app && useradd -r -g app app && chown -R app:app /app /vol
 USER app
 
-# Entrypoint: wait for DB and run migrations optionally; run Gunicorn
-# You can override CMD in docker-compose for development.
-CMD ["gunicorn", "ecom.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--log-level", "info", "--access-logfile", "-", "--error-logfile", "-"]
+ENTRYPOINT ["/app/entrypoint.sh"]
+# CMD is handled inside entrypoint (gunicorn exec)
